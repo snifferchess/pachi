@@ -32,8 +32,8 @@ caffe_init()
 		return;
 
 	struct stat s;	
-	const char *model_file =   "golast19.prototxt";
-	const char *trained_file = "golast.trained";
+	const char *model_file =   "df2_net1.prototxt";
+	const char *trained_file = "df2_net1.caffemodel";
 	if (stat(model_file, &s) != 0  ||  stat(trained_file, &s) != 0) {
 		if (DEBUGL(1))
 			fprintf(stderr, "No dcnn files found, will not use dcnn code.\n");
@@ -55,7 +55,7 @@ void
 caffe_get_data(float *data, float *result)
 {
 	int size = 19;
-	Blob<float> *blob = new Blob<float>(1, 13, size, size);
+	Blob<float> *blob = new Blob<float>(1, 25, size, size);
 	blob->set_cpu_data(data);
 	vector<Blob<float>*> bottom;
 	bottom.push_back(blob);

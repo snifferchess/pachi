@@ -33,41 +33,128 @@ dcnn_quiet_caffe(int argc, char *argv[])
 	execvp(argv[0], argv);   /* Sucks that we have to do this */
 }
 
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+static void
+distance_transform(float *arr)
+{
+	// First dimension.                                                                                           
+	for (int j = 0; j < 19; j++) {
+		for (int i = 1; i < 19; i++) 
+			arr[i*19 + j] = min(arr[i*19 + j], arr[(i-1)*19 + j] + 1);
+		for (int i = 19 - 2; i >= 0; i--) 
+			arr[i*19 + j] = min(arr[i*19 + j], arr[(i+1)*19 + j] + 1);
+	}
+	// Second dimension                                                                                           
+	for (int i = 0; i < 19; i++) {
+		for (int j = 1; j < 19; j++)
+			arr[i*19 + j] = min(arr[i*19 + j], arr[i*19 + (j-1)] + 1);
+		for (int j = 19 - 2; j >= 0; j--) 
+			arr[i*19 + j] = min(arr[i*19+j], arr[i * 19 + (j+1)] + 1);
+	}
+}
+
+static void
+get_distance_map(struct board *b, enum stone color, float *data) 
+{
+	for (int i = 0; i < 19; i++) {
+		for (int j = 0; j < 19; j++) {
+			coord_t c = coord_xy(b, i+1, j+1);
+			if (board_at(b, c) == color)
+				data[i*19 + j] = 0;
+			else
+				data[i*19 + j] = 10000;
+		}
+	}
+	distance_transform(data);
+}
+
+static float
+board_history_decay(struct board *b, coord_t coord)
+{
+	return exp(0.1 * (b->moveno[coord] - b->moves));
+}
 
 void
 dcnn_get_moves(struct board *b, enum stone color, float result[])
 {
 	assert(real_board_size(b) == 19);
 
+	enum stone other_color = stone_other(color);
 	int size = 19;
-	int dsize = 13 * size * size;
+	int dsize = 25 * size * size;
 	float *data = malloc(sizeof(float) * dsize);
 	for (int i = 0; i < dsize; i++) 
 		data[i] = 0.0;
 
+	
+	float our_dist[19*19];
+	float opponent_dist[19*19];
+	get_distance_map(b, color, our_dist);
+	get_distance_map(b, other_color, opponent_dist);
+	
 	for (int j = 0; j < size; j++) {
 		for(int k = 0; k < size; k++) {
 			int p = size * j + k;
 			coord_t c = coord_xy(b, j+1, k+1);
 			group_t g = group_at(b, c);
 			enum stone bc = board_at(b, c);
-			int libs = board_group_info(b, g).libs - 1;
+			int libs = board_group_info(b, g).libs;
 			if (libs > 3) libs = 3;
-			if (bc == S_NONE) 
-				data[8*size*size + p] = 1.0;
-			else if (bc == color)
-				data[(0+libs)*size*size + p] = 1.0;
-			else if (bc == stone_other(color))
-				data[(4+libs)*size*size + p] = 1.0;
 			
-			if (c == b->last_move.coord)
+			/* plane 0: our stones with 1 liberty */
+			/* plane 1: our stones with 2 liberties */
+			/* plane 2: our stones with 3+ liberties */
+			if (bc == color)
+				data[(libs-1)*size*size + p] = 1.0;
+
+			/* planes 3, 4, 5: opponent liberties */
+			if (bc == other_color)
+				data[(3+libs-1)*size*size + p] = 1.0;
+
+			/* plane 6: our simple ko.
+			 * but actually, our stones. typo ? */
+			if (bc == color)
+				data[6*size*size + p] = 1.0;
+
+			/* plane 7: our stones. */
+			if (bc == color)
+				data[7*size*size + p] = 1.0;
+
+			/* plane 8: opponent stones. */
+			if (bc == other_color)
+				data[8*size*size + p] = 1.0;
+
+			/* plane 9: empty spots. */
+			if (bc == S_NONE)
 				data[9*size*size + p] = 1.0;
-			else if (c == b->last_move2.coord)
-				data[10*size*size + p] = 1.0;
-			else if (c == b->last_move3.coord)
-				data[11*size*size + p] = 1.0;
-			else if (c == b->last_move4.coord)
+
+			/* plane 10: our history */
+			/* FIXME -1 for komi */
+			if (bc == color)
+				data[10*size*size + p] = board_history_decay(b, c);
+			
+			/* plane 11: opponent history */
+			/* FIXME -1 for komi */
+			if (bc == other_color)
+				data[11*size*size + p] = board_history_decay(b, c);
+
+			/* plane 12: border */
+			if (!j || !k || j == size-1 || k == size-1)
 				data[12*size*size + p] = 1.0;
+			
+			/* plane 13: position mask - distance from corner */
+			float m = (float)size / 2;
+			data[13*size*size + p] = exp(-0.5 * (j-m)*(j-m) + (k-m)*(k-m));
+
+			/* plane 14: closest color is ours */
+			data[14*size*size + p] = (our_dist[p] < opponent_dist[p]);
+
+			/* plane 15: closest color is opponent */
+			data[15*size*size + p] = (opponent_dist[p] < our_dist[p]);
+
+			/* planes 16-24: encode rank - set 9th plane for 9d */
+			data[24*size*size + p] = 1.0;
 			
 		}
 	}
