@@ -93,8 +93,9 @@ board_alloc(struct board *board)
 	int tqsize = 0;
 #endif
 	int cdsize = board_size2(board) * sizeof(*board->coord);
+	int movenosize = board_size2(board) * sizeof(*board->moveno);
 
-	size_t size = bsize + gsize + fsize + psize + nsize + hsize + gisize + csize + ssize + p3size + tsize + tqsize + cdsize;
+	size_t size = bsize + gsize + fsize + psize + nsize + hsize + gisize + csize + ssize + p3size + tsize + tqsize + cdsize + movenosize;
 	void *x = malloc2(size);
 
 	/* board->b must come first */
@@ -119,6 +120,7 @@ board_alloc(struct board *board)
 	board->tq = x; x += tqsize;
 #endif
 	board->coord = x; x += cdsize;
+	board->moveno = x; x += movenosize;
 
 	return size;
 }
@@ -1430,6 +1432,7 @@ board_play_outside(struct board *board, struct move *m, int f, struct board_undo
 	if (!u) {
 		board->last_move4 = board->last_move3;
 		board->last_move3 = board->last_move2;
+		board->moveno[coord] = board->moves;
 	}
 	board->last_move2 = board->last_move;
 	board->last_move = *m;
@@ -1540,6 +1543,7 @@ board_play_in_eye(struct board *board, struct move *m, int f, struct board_undo 
 	if (!u) {
 		board->last_move4 = board->last_move3;
 		board->last_move3 = board->last_move2;
+		board->moveno[coord] = board->moves;
 	}
 	board->last_move2 = board->last_move;
 	board->last_move = *m;

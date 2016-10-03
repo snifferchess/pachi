@@ -281,6 +281,8 @@ FB_ONLY(hash_t history_hash)[1 << history_hash_bits];
 FB_ONLY(hash_t hash);
 	/* Hash of current board position quadrants. */
 FB_ONLY(hash_t qhash)[4];
+
+FB_ONLY(int *moveno);
 };
 
 struct undo_merge {
