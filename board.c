@@ -1432,7 +1432,7 @@ board_play_outside(struct board *board, struct move *m, int f, struct board_undo
 	if (!u) {
 		board->last_move4 = board->last_move3;
 		board->last_move3 = board->last_move2;
-		board->moveno[coord] = board->moves;
+		board->moveno[coord] = board->moves+1;
 	}
 	board->last_move2 = board->last_move;
 	board->last_move = *m;
@@ -1543,7 +1543,7 @@ board_play_in_eye(struct board *board, struct move *m, int f, struct board_undo 
 	if (!u) {
 		board->last_move4 = board->last_move3;
 		board->last_move3 = board->last_move2;
-		board->moveno[coord] = board->moves;
+		board->moveno[coord] = board->moves+1;
 	}
 	board->last_move2 = board->last_move;
 	board->last_move = *m;

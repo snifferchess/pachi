@@ -70,18 +70,21 @@ get_distance_map(struct board *b, enum stone color, float *data)
 }
 
 static float
-board_history_decay(struct board *b, coord_t coord)
+board_history_decay(struct board *b, coord_t coord, enum stone color)
 {
-	return exp(0.1 * (b->moveno[coord] - b->moves));
+	int v = 0;
+	if (board_at(b, coord) == color || board_at(b, coord) == S_NONE)
+		v = b->moveno[coord];
+	return exp(0.1 * (v - (b->moves+1)));
 }
 
 static void
 debug_input(float *data)
 {
-	int plane = 24;
+	int plane = 10;
 	int size = 19;
 	fprintf(stderr, "plane %i:\n", plane);
-#if 1
+#if 0
 	for (int j = 0; j < size; j++) {
 		for(int k = 0; k < size; k++) {
 			int p = size * j + k;
@@ -169,13 +172,11 @@ dcnn_get_moves(struct board *b, enum stone color, float result[])
 
 			/* plane 10: our history */
 			/* FIXME -1 for komi */
-			if (bc == color)
-				data[10*size*size + p] = board_history_decay(b, c);
+			data[10*size*size + p] = board_history_decay(b, c, color);
 			
 			/* plane 11: opponent history */
 			/* FIXME -1 for komi */
-			if (bc == other_color)
-				data[11*size*size + p] = board_history_decay(b, c);
+			data[11*size*size + p] = board_history_decay(b, c, other_color);
 
 			/* plane 12: border */
 			if (!j || !k || j == size-1 || k == size-1)
