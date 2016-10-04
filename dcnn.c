@@ -75,6 +75,44 @@ board_history_decay(struct board *b, coord_t coord)
 	return exp(0.1 * (b->moveno[coord] - b->moves));
 }
 
+static void
+debug_input(float *data)
+{
+	int plane = 24;
+	int size = 19;
+	fprintf(stderr, "plane %i:\n", plane);
+#if 1
+	for (int j = 0; j < size; j++) {
+		for(int k = 0; k < size; k++) {
+			int p = size * j + k;
+			//fprintf(stderr, "%.1f ", data[plane*size*size + p]);
+			fprintf(stderr, "%i  ", (int)data[plane*size*size + p]);
+		}
+		fprintf(stderr, "\n");
+	}
+#else
+	fprintf(stderr, "\ncolumns 1-16\n");
+	for (int j = 0; j < size; j++) {
+		for(int k = 0; k < 16; k++) {
+			int p = size * j + k;
+			fprintf(stderr, "%.3f ", data[plane*size*size + p]);
+			//fprintf(stderr, "%i  ", (int)data[plane*size*size + p]);
+		}
+		fprintf(stderr, "\n");
+	}
+
+	fprintf(stderr, "\ncolumns 17-19\n");
+	for (int j = 0; j < size; j++) {
+		for(int k = 16; k < 19; k++) {
+			int p = size * j + k;
+			fprintf(stderr, "%.3f ", data[plane*size*size + p]);
+			//fprintf(stderr, "%i  ", (int)data[plane*size*size + p]);
+		}
+		fprintf(stderr, "\n");
+	}
+#endif
+}
+
 void
 dcnn_get_moves(struct board *b, enum stone color, float result[])
 {
@@ -144,8 +182,8 @@ dcnn_get_moves(struct board *b, enum stone color, float result[])
 				data[12*size*size + p] = 1.0;
 			
 			/* plane 13: position mask - distance from corner */
-			float m = (float)size / 2;
-			data[13*size*size + p] = exp(-0.5 * (j-m)*(j-m) + (k-m)*(k-m));
+			float m = (float)(size+1) / 2;
+			data[13*size*size + p] = exp(-0.5 * ((j-m)*(j-m) + (k-m)*(k-m)));
 
 			/* plane 14: closest color is ours */
 			data[14*size*size + p] = (our_dist[p] < opponent_dist[p]);
@@ -154,10 +192,11 @@ dcnn_get_moves(struct board *b, enum stone color, float result[])
 			data[15*size*size + p] = (opponent_dist[p] < our_dist[p]);
 
 			/* planes 16-24: encode rank - set 9th plane for 9d */
-			data[24*size*size + p] = 1.0;
-			
+			data[24*size*size + p] = 1.0;			
 		}
 	}
+
+	//debug_input(data);
 
 	caffe_get_data(data, result);
 	free(data);
