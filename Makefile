@@ -62,8 +62,8 @@ BINDIR=$(PREFIX)/bin
 # any of this.
 # (N.B. -ffast-math breaks us; -fomit-frame-pointer is added below
 # unless PROFILING=gprof.)
-CUSTOM_CFLAGS?=-Wall -ggdb3 -O3 -std=gnu99 -frename-registers -pthread -Wsign-compare -D_GNU_SOURCE
-CUSTOM_CXXFLAGS?=-Wall -ggdb3 -O3
+CUSTOM_CFLAGS?=-Wall -ggdb3 -O0 -std=gnu99 -frename-registers -pthread -Wsign-compare -D_GNU_SOURCE
+CUSTOM_CXXFLAGS?=-Wall -ggdb3 -O0
 
 ### CONFIGURATION END
 
@@ -139,7 +139,7 @@ unexport INCLUDES
 INCLUDES=-I.
 
 
-OBJS=board.o gtp.o move.o ownermap.o pattern3.o pattern.o patternsp.o patternprob.o playout.o probdist.o random.o stone.o timeinfo.o network.o fbook.o chat.o
+OBJS=board.o gtp.o move.o ownermap.o pattern3.o pattern.o patternmmap.o patternsp.o patternprob.o playout.o probdist.o random.o stone.o timeinfo.o network.o fbook.o chat.o
 ifdef DCNN
 	OBJS+=dcnn.o
 endif

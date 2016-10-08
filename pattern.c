@@ -108,6 +108,7 @@ void
 patterns_init(struct pattern_setup *pat, char *arg, bool will_append, bool load_prob)
 {
 	char *pdict_file = NULL;
+	int mmap_probe = 0;
 
 	memset(pat, 0, sizeof(*pat));
 
@@ -142,6 +143,9 @@ patterns_init(struct pattern_setup *pat, char *arg, bool will_append, bool load_
 			} else if (!strcasecmp(optname, "pdict_file") && optval) {
 				pdict_file = optval;
 
+			} else if (!strcasecmp(optname, "mmap_probe")) {
+				mmap_probe = 1;
+
 			} else {
 				fprintf(stderr, "patterns: Invalid argument %s or missing value\n", optname);
 				exit(EXIT_FAILURE);
@@ -152,6 +156,10 @@ patterns_init(struct pattern_setup *pat, char *arg, bool will_append, bool load_
 	if (load_prob && pat->pc.spat_dict) {
 		pat->pd = pattern_pdict_init(pdict_file, &pat->pc);
 	}
+
+	pattern_mmap_status();
+	if (mmap_probe)
+		pattern_mmap_dump(pat);
 }
 
 

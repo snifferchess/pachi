@@ -9,7 +9,7 @@
 #include "pattern.h"
 #include "patternsp.h"
 #include "patternprob.h"
-
+#include "patternmmap.h"
 
 /* We try to avoid needlessly reloading probability dictionary
  * since it may take rather long time. */
@@ -32,9 +32,9 @@ pattern_pdict_init(char *filename, struct pattern_config *pc)
 		return NULL;
 	}
 
-	struct pattern_pdict *dict = calloc2(1, sizeof(*dict));
+	struct pattern_pdict *dict = pattern_mmap_calloc(1, sizeof(*dict));
 	dict->pc = pc;
-	dict->table = calloc2(pc->spat_dict->nspatials + 1, sizeof(*dict->table));
+	dict->table = pattern_mmap_calloc(pc->spat_dict->nspatials + 1, sizeof(*dict->table));
 
 	char *sphcachehit = calloc2(pc->spat_dict->nspatials, 1);
 	hash_t (*sphcache)[PTH__ROTATIONS] = malloc(pc->spat_dict->nspatials * sizeof(sphcache[0]));
@@ -42,7 +42,7 @@ pattern_pdict_init(char *filename, struct pattern_config *pc)
 	int i = 0;
 	char sbuf[1024];
 	while (fgets(sbuf, sizeof(sbuf), f)) {
-		struct pattern_prob *pb = calloc2(1, sizeof(*pb));
+		struct pattern_prob *pb = pattern_mmap_calloc(1, sizeof(*pb));
 		int c, o;
 
 		char *buf = sbuf;
