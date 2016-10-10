@@ -37,6 +37,15 @@
 
 # DOUBLE_FLOATING=1
 
+# Use shared memory for large patterns ?
+# This saves about 512Mb RAM per instance when running multiple Pachi
+# instances with large patterns enabled. Another benefit is that patterns
+# will load instantly once the shared memory segment is created. It is
+# your job however to remove it (rm /dev/shm/pachi*) once no longer needed
+# or it will continue to take up memory long after all pachis are gone.
+
+# PATTERN_SHM=1
+
 # Enable performance profiling using gprof. Note that this also disables
 # inlining, which allows more fine-grained profile, but may also distort
 # it somewhat.
@@ -62,8 +71,8 @@ BINDIR=$(PREFIX)/bin
 # any of this.
 # (N.B. -ffast-math breaks us; -fomit-frame-pointer is added below
 # unless PROFILING=gprof.)
-CUSTOM_CFLAGS?=-Wall -ggdb3 -O0 -std=gnu99 -frename-registers -pthread -Wsign-compare -D_GNU_SOURCE
-CUSTOM_CXXFLAGS?=-Wall -ggdb3 -O0
+CUSTOM_CFLAGS?=-Wall -ggdb3 -O3 -std=gnu99 -frename-registers -pthread -Wsign-compare -D_GNU_SOURCE
+CUSTOM_CXXFLAGS?=-Wall -ggdb3 -O3
 
 ### CONFIGURATION END
 
@@ -105,6 +114,10 @@ ifdef DCNN
 	CUSTOM_CFLAGS+=-DDCNN
 	CUSTOM_CXXFLAGS+=-DDCNN
 	SYS_LIBS:=-lcaffe -lboost_system -lstdc++ $(SYS_LIBS)
+endif
+
+ifdef PATTERN_SHM
+	CUSTOM_CFLAGS+=-DPATTERN_SHM
 endif
 
 ifdef DOUBLE_FLOATING

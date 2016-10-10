@@ -1,25 +1,15 @@
 #define DEBUG
 #include <assert.h>
-#include <ctype.h>
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 
-
-#include "board.h"
 #include "debug.h"
 #include "pattern.h"
 #include "patternsp.h"
 #include "patternprob.h"
-#include "tactics/ladder.h"
-#include "tactics/selfatari.h"
-#include "tactics/util.h"
 #include "patternshm.h"
 
 #define ALIGN_8(p)  ((unsigned long)(p) & 0x7 ? (typeof(p))(((unsigned long)(p) & ~0x7) + 8) : p );
@@ -89,11 +79,9 @@ pattern_shm_alloc_init()
 {
 	if (pm) return;
 	
-	// TODO: use shm_open() instead -> no file io
 	int fd = shm_open("pachi-patterns", O_RDWR | O_CREAT | O_TRUNC, 0644);
 	assert(fd != -1);
 	int r = ftruncate(fd, size);  assert(r == 0);
-	//void *pt = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	void *pt = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	assert(pt != MAP_FAILED);
 	//fprintf(stderr, "Created patterns shared memory @ %p\n", pt);
@@ -104,7 +92,6 @@ pattern_shm_alloc_init()
 	pm->magic = PACHI_SHM_MAGIC;
 	pm->version = PACHI_SHM_VERSION;
 	pm->ready = 0;
-
 
 	pm->bottom = (char*)pt + sizeof(*pm);
 	pm->bottom = ALIGN_8(pm->bottom);
@@ -130,6 +117,8 @@ pattern_shm_ready(struct pattern_setup *pat)
 
 static int alloc_called = 0;
 
+/* Dumb realloc() which doesn't move stuff around.
+ * Fine as long as no other alloc calls happen in between. */
 static void *
 pattern_shm_realloc(void *ptr, size_t size)
 {

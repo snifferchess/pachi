@@ -105,7 +105,11 @@ feature_payloads(struct pattern_setup *pat, enum feature_id f)
 }
 
 /* Use shared memory to load large patterns ? */
-static int use_shm = 1;
+#ifdef PATTERN_SHM
+#define use_shm 1
+#else
+#define use_shm 0
+#endif
 
 void
 patterns_init(struct pattern_setup *pat, char *arg, bool will_append, bool load_prob)
