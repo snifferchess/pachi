@@ -29,7 +29,7 @@ void* (*pattern_malloc)(size_t size);
 void* (*pattern_realloc)(void *ptr, size_t size);
 void* (*pattern_calloc)(size_t nmemb, size_t size);
 
-int patterns_init_from_shm(struct pattern_setup *pat);
+int patterns_init_from_shm(struct pattern_setup *pat, char *arg);
 void pattern_shm_ready(struct pattern_setup *pat);
 
 #endif /* PACHI_PATTERNSHM_H */

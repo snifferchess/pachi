@@ -119,7 +119,7 @@ patterns_init(struct pattern_setup *pat, char *arg, bool will_append, bool load_
 	memcpy(&pat->ps, PATTERN_SPEC_MATCH_DEFAULT, sizeof(pattern_spec));
 	
 	patterns_use_shm(use_shm);
-	if (use_shm && patterns_init_from_shm(pat))
+	if (use_shm && patterns_init_from_shm(pat, arg))
 		return;  /* Using patterns shared memory, done. */
 
 	char *pdict_file = NULL;

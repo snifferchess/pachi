@@ -42,7 +42,7 @@ patterns_use_shm(bool flag)
 }
 
 int
-patterns_init_from_shm(struct pattern_setup *pat)
+patterns_init_from_shm(struct pattern_setup *pat, char *arg)
 {
 	assert(use_shm);
 	if (!pm) {
@@ -61,6 +61,8 @@ patterns_init_from_shm(struct pattern_setup *pat)
 		fprintf(stderr, "Found patterns shared memory.\n");
 		fprintf(stderr, "Loaded spatial dictionary of %d patterns.\n", pm->sdict->nspatials);
 		fprintf(stderr, "Loaded pattern-probability pairs.\n");
+		if (arg)
+			fprintf(stderr, "Warning: pattern args ignored since we're using shared memory.\n");
 	}
 
 	assert(pm->magic == PACHI_SHM_MAGIC);
