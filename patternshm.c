@@ -20,11 +20,11 @@
 #include "tactics/ladder.h"
 #include "tactics/selfatari.h"
 #include "tactics/util.h"
-#include "patternmmap.h"
+#include "patternshm.h"
 
 static int size = 550 * 1024 * 1024;
 
-static struct pattern_mmap *pm = 0;
+static struct pattern_shm *pm = 0;
 
 #define ALIGN_8(p)  ((unsigned long)(p) & 0x7 ? (typeof(p))(((unsigned long)(p) & ~0x7) + 8) : p );
 
@@ -38,7 +38,7 @@ patterns_init_from_shm(struct pattern_setup *pat, char *arg, bool will_append, b
 		
 		pm = mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
 		assert(pm != MAP_FAILED);
-		void *addr = pm->mmap;
+		void *addr = pm->addr;
 		int r = munmap(pm, size);  assert(r == 0);
 		/* Now we know the address */
 		pm = mmap(addr, size, PROT_READ, MAP_SHARED | MAP_FIXED, fd, 0);
@@ -46,6 +46,7 @@ patterns_init_from_shm(struct pattern_setup *pat, char *arg, bool will_append, b
 		fprintf(stderr, "Patterns shared memory mapped @ %p\n", addr);
 	}
 
+	fprintf(stderr, "sdict: %p  pdict: %p\n", pm->sdict, pm->pdict);
 	pat->pc.spat_dict = pm->sdict;
 	pat->pd = pm->pdict;
 	//if (DEBUGL(1))
@@ -57,7 +58,7 @@ patterns_init_from_shm(struct pattern_setup *pat, char *arg, bool will_append, b
 
 
 static void
-pattern_mmap_alloc_init()
+pattern_shm_alloc_init()
 {
 	if (pm) return;
 	
@@ -71,7 +72,7 @@ pattern_mmap_alloc_init()
 	fprintf(stderr, "Created patterns shared memory @ %p\n", pt);
 
 	pm = pt;
-	pm->mmap = pt;
+	pm->addr = pt;
 	pm->size = size;
 	pm->bottom = (char*)pt + sizeof(*pm);
 	pm->bottom = ALIGN_8(pm->bottom);
@@ -79,25 +80,26 @@ pattern_mmap_alloc_init()
 }
 
 void
-pattern_mmap_ready(struct pattern_setup *pat)
+pattern_shm_ready(struct pattern_setup *pat)
 {
 	if (!pm) return;
-	int r = (pm->mmap + pm->size) - pm->top;
+	int r = (pm->addr + pm->size) - pm->top;
 	fprintf(stderr, "remaining: %i  (%iMb)\n", r, r / (1024*1024));	
 
 	pm->sdict = pat->pc.spat_dict;
 	pm->pdict = pat->pd;
+	fprintf(stderr, "sdict: %p  pdict: %p\n", pm->sdict, pm->pdict);
 }
 
 
 static int alloc_called = 0;
 
 void *
-pattern_mmap_realloc(void *ptr, size_t size)
+pattern_shm_realloc(void *ptr, size_t size)
 {
 	if (ptr) assert(!alloc_called);
 	if (!ptr)
-		ptr = pattern_mmap_malloc(size);
+		ptr = pattern_shm_malloc(size);
 	alloc_called = 0;
 	pm->top = (char*)ptr + size;
 	pm->top = ALIGN_8(pm->top);
@@ -106,9 +108,9 @@ pattern_mmap_realloc(void *ptr, size_t size)
 
 
 void *
-pattern_mmap_malloc(size_t size)
+pattern_shm_malloc(size_t size)
 {
-	pattern_mmap_alloc_init();
+	pattern_shm_alloc_init();
 	alloc_called = 1;
 	void *pt = pm->top;
 	pm->top += size;
@@ -117,9 +119,9 @@ pattern_mmap_malloc(size_t size)
 }
 
 void *
-pattern_mmap_calloc(size_t nmemb, size_t size)
+pattern_shm_calloc(size_t nmemb, size_t size)
 {
-	void *pt = pattern_mmap_malloc(nmemb * size);
+	void *pt = pattern_shm_malloc(nmemb * size);
 	memset(pt, 0, nmemb * size);
 	return pt;
 }

@@ -10,7 +10,7 @@
 #include "pattern.h"
 #include "patternsp.h"
 #include "patternprob.h"
-#include "patternmmap.h"
+#include "patternshm.h"
 #include "tactics/ladder.h"
 #include "tactics/selfatari.h"
 #include "tactics/util.h"
@@ -155,7 +155,7 @@ patterns_init(struct pattern_setup *pat, char *arg, bool will_append, bool load_
 		pat->pd = pattern_pdict_init(pdict_file, &pat->pc);
 	}
 
-	pattern_mmap_ready(pat);
+	pattern_shm_ready(pat);
 }
 
 
