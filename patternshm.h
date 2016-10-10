@@ -1,9 +1,15 @@
 #ifndef PACHI_PATTERNSHM_H
 #define PACHI_PATTERNSHM_H
 
+#define PACHI_SHM_MAGIC   0x9acceee
+#define PACHI_SHM_VERSION 1
+
+
 struct pattern_shm {
 	char *addr;
 	int  size;
+	int  magic;
+	int  version;
 	int  ready;
 
 	/* allocator stuff */
