@@ -46,6 +46,7 @@ patterns_init_from_shm(struct pattern_setup *pat, char *arg, bool will_append, b
 		fprintf(stderr, "Patterns shared memory mapped @ %p\n", addr);
 	}
 
+	assert(pm->ready);
 	fprintf(stderr, "sdict: %p  pdict: %p\n", pm->sdict, pm->pdict);
 	pat->pc.spat_dict = pm->sdict;
 	pat->pd = pm->pdict;
@@ -72,6 +73,7 @@ pattern_shm_alloc_init()
 	fprintf(stderr, "Created patterns shared memory @ %p\n", pt);
 
 	pm = pt;
+	pm->ready = 0;
 	pm->addr = pt;
 	pm->size = size;
 	pm->bottom = (char*)pt + sizeof(*pm);
@@ -92,6 +94,7 @@ pattern_shm_ready(struct pattern_setup *pat)
 	pat->pd->pc = &pm->pc;
 	assert(pm->pc.spat_dict == pm->sdict);
 	fprintf(stderr, "sdict: %p  pdict: %p\n", pm->sdict, pm->pdict);
+	pm->ready = 1;
 }
 
 

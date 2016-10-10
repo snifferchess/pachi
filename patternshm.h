@@ -4,6 +4,7 @@
 struct pattern_shm {
 	char *addr;
 	int  size;
+	int  ready;
 
 	/* allocator stuff */
 	char *bottom;
