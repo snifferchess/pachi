@@ -88,6 +88,9 @@ pattern_shm_ready(struct pattern_setup *pat)
 
 	pm->sdict = pat->pc.spat_dict;
 	pm->pdict = pat->pd;
+	pm->pc = pat->pc;
+	pat->pd->pc = &pm->pc;
+	assert(pm->pc.spat_dict == pm->sdict);
 	fprintf(stderr, "sdict: %p  pdict: %p\n", pm->sdict, pm->pdict);
 }
 

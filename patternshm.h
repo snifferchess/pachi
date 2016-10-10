@@ -10,7 +10,8 @@ struct pattern_shm {
 	char *top;
 
 	struct spatial_dict *sdict;
-	struct pattern_pdict *pdict;
+	struct pattern_pdict *pdict;	
+	struct pattern_config pc;	/* copied here since pdict points to it */
 };
 
 
