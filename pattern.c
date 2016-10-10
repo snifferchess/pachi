@@ -10,6 +10,7 @@
 #include "pattern.h"
 #include "patternsp.h"
 #include "patternprob.h"
+#include "patternmmap.h"
 #include "tactics/ladder.h"
 #include "tactics/selfatari.h"
 #include "tactics/util.h"
@@ -103,19 +104,19 @@ feature_payloads(struct pattern_setup *pat, enum feature_id f)
 	}
 }
 
-
 void
 patterns_init(struct pattern_setup *pat, char *arg, bool will_append, bool load_prob)
 {
-	char *pdict_file = NULL;
-	int mmap_probe = 0;
-
 	memset(pat, 0, sizeof(*pat));
-
 	pat->pc = DEFAULT_PATTERN_CONFIG;
-	pat->pc.spat_dict = spatial_dict_init(will_append, !load_prob);
-
 	memcpy(&pat->ps, PATTERN_SPEC_MATCH_DEFAULT, sizeof(pattern_spec));
+
+	/* Already have an instance running ? Use patterns shared memory */
+	if (patterns_init_from_shm(pat, arg, will_append, load_prob))  
+		return;
+
+	char *pdict_file = NULL;
+	pat->pc.spat_dict = spatial_dict_init(will_append, !load_prob);
 
 	if (arg) {
 		char *optspec, *next = arg;
@@ -143,9 +144,6 @@ patterns_init(struct pattern_setup *pat, char *arg, bool will_append, bool load_
 			} else if (!strcasecmp(optname, "pdict_file") && optval) {
 				pdict_file = optval;
 
-			} else if (!strcasecmp(optname, "mmap_probe")) {
-				mmap_probe = 1;
-
 			} else {
 				fprintf(stderr, "patterns: Invalid argument %s or missing value\n", optname);
 				exit(EXIT_FAILURE);
@@ -157,9 +155,7 @@ patterns_init(struct pattern_setup *pat, char *arg, bool will_append, bool load_
 		pat->pd = pattern_pdict_init(pdict_file, &pat->pc);
 	}
 
-	pattern_mmap_status();
-	if (mmap_probe)
-		pattern_mmap_dump(pat);
+	pattern_mmap_ready(pat);
 }
 
 
