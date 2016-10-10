@@ -221,7 +221,7 @@ spatial_dict_addc(struct spatial_dict *dict, struct spatial *s)
 	/* Allocate space in 1024 blocks. */
 #define SPATIALS_ALLOC 1024
 	if (!(dict->nspatials % SPATIALS_ALLOC)) {
-		dict->spatials = pattern_shm_realloc(dict->spatials,
+		dict->spatials = pattern_realloc(dict->spatials,
 				(dict->nspatials + SPATIALS_ALLOC)
 				* sizeof(*dict->spatials));
 	}
@@ -402,7 +402,7 @@ spatial_dict_init(bool will_append, bool hash)
 		return NULL;
 	}
 
-	struct spatial_dict *dict = pattern_shm_calloc(1, sizeof(*dict));
+	struct spatial_dict *dict = pattern_calloc(1, sizeof(*dict));
 	/* We create a dummy record for index 0 that we will
 	 * never reference. This is so that hash value 0 can
 	 * represent "no value". */

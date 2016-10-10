@@ -21,12 +21,15 @@ struct pattern_shm {
 	struct pattern_config pc;	/* copied here since pdict points to it */
 };
 
+void patterns_use_shm(bool flag);
 
-void *pattern_shm_malloc(size_t size);
-void *pattern_shm_realloc(void *ptr, size_t size);
-void *pattern_shm_calloc(size_t nmemb, size_t size);
+/* Pointers to regular malloc/realloc/calloc if not using patterns shm
+ * or custom mmap allocator versions if we are. */
+void* (*pattern_malloc)(size_t size);
+void* (*pattern_realloc)(void *ptr, size_t size);
+void* (*pattern_calloc)(size_t nmemb, size_t size);
 
-int patterns_init_from_shm(struct pattern_setup *pat, char *arg, bool will_append, bool load_prob);
+int patterns_init_from_shm(struct pattern_setup *pat);
 void pattern_shm_ready(struct pattern_setup *pat);
 
 #endif /* PACHI_PATTERNSHM_H */

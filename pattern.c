@@ -104,16 +104,19 @@ feature_payloads(struct pattern_setup *pat, enum feature_id f)
 	}
 }
 
+/* Use shared memory to load large patterns ? */
+static int use_shm = 1;
+
 void
 patterns_init(struct pattern_setup *pat, char *arg, bool will_append, bool load_prob)
 {
 	memset(pat, 0, sizeof(*pat));
 	pat->pc = DEFAULT_PATTERN_CONFIG;
 	memcpy(&pat->ps, PATTERN_SPEC_MATCH_DEFAULT, sizeof(pattern_spec));
-
-	/* Already have an instance running ? Use patterns shared memory */
-	if (patterns_init_from_shm(pat, arg, will_append, load_prob))  
-		return;
+	
+	patterns_use_shm(use_shm);
+	if (use_shm && patterns_init_from_shm(pat))
+		return;  /* Using patterns shared memory, done. */
 
 	char *pdict_file = NULL;
 	pat->pc.spat_dict = spatial_dict_init(will_append, !load_prob);
@@ -155,7 +158,7 @@ patterns_init(struct pattern_setup *pat, char *arg, bool will_append, bool load_
 		pat->pd = pattern_pdict_init(pdict_file, &pat->pc);
 	}
 
-	pattern_shm_ready(pat);
+	if (use_shm) pattern_shm_ready(pat);
 }
 
 

@@ -22,15 +22,39 @@
 #include "tactics/util.h"
 #include "patternshm.h"
 
-static int size = 550 * 1024 * 1024;
-
-static struct pattern_shm *pm = 0;
-
 #define ALIGN_8(p)  ((unsigned long)(p) & 0x7 ? (typeof(p))(((unsigned long)(p) & ~0x7) + 8) : p );
 
-int
-patterns_init_from_shm(struct pattern_setup *pat, char *arg, bool will_append, bool load_prob)
+static int use_shm = 0;
+static int size = 550 * 1024 * 1024;
+static struct pattern_shm *pm = 0;
+
+static void* pattern_shm_malloc(size_t size);
+static void* pattern_shm_realloc(void *ptr, size_t size);
+static void* pattern_shm_calloc(size_t nmemb, size_t size);
+
+void * (*pattern_realloc)(void *ptr, size_t size) = 0;
+void * (*pattern_malloc)(size_t size) = 0;
+void * (*pattern_calloc)(size_t nmemb, size_t size) = 0;
+
+void
+patterns_use_shm(bool flag)
 {
+	use_shm = flag;
+	pattern_realloc = realloc;
+        pattern_malloc = malloc;
+	pattern_calloc = calloc;
+	
+	if (use_shm) {
+		pattern_realloc = pattern_shm_realloc;
+		pattern_malloc = pattern_shm_malloc;
+		pattern_calloc = pattern_shm_calloc;
+	}
+}
+
+int
+patterns_init_from_shm(struct pattern_setup *pat)
+{
+	assert(use_shm);
 	if (!pm) {
 		int fd = shm_open("pachi-patterns", O_RDONLY, 0);
 		if (fd == -1)
@@ -43,21 +67,21 @@ patterns_init_from_shm(struct pattern_setup *pat, char *arg, bool will_append, b
 		/* Now we know the address */
 		pm = mmap(addr, size, PROT_READ, MAP_SHARED | MAP_FIXED, fd, 0);
 		assert(pm != MAP_FAILED);
-		fprintf(stderr, "Patterns shared memory mapped @ %p\n", addr);
+		//fprintf(stderr, "Patterns shared memory mapped @ %p\n", addr);
+		fprintf(stderr, "Found patterns shared memory.\n");
+		fprintf(stderr, "Loaded spatial dictionary of %d patterns.\n", pm->sdict->nspatials);
+		fprintf(stderr, "Loaded pattern-probability pairs.\n");
 	}
 
 	assert(pm->magic == PACHI_SHM_MAGIC);
 	assert(pm->version == PACHI_SHM_VERSION);
 	assert(pm->ready);
-	fprintf(stderr, "sdict: %p  pdict: %p\n", pm->sdict, pm->pdict);
+	//fprintf(stderr, "sdict: %p  pdict: %p\n", pm->sdict, pm->pdict);
 	pat->pc.spat_dict = pm->sdict;
 	pat->pd = pm->pdict;
-	//if (DEBUGL(1))
-	//	fprintf(stderr, "Loaded spatial dictionary of %d patterns.\n", pm->sdict->nspatials);
 
 	return 1;
 }
-
 
 
 static void
@@ -72,7 +96,7 @@ pattern_shm_alloc_init()
 	//void *pt = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	void *pt = mmap(0, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	assert(pt != MAP_FAILED);
-	fprintf(stderr, "Created patterns shared memory @ %p\n", pt);
+	//fprintf(stderr, "Created patterns shared memory @ %p\n", pt);
 
 	pm = pt;
 	pm->addr = pt;
@@ -90,23 +114,23 @@ pattern_shm_alloc_init()
 void
 pattern_shm_ready(struct pattern_setup *pat)
 {
-	if (!pm) return;
-	int r = (pm->addr + pm->size) - pm->top;
-	fprintf(stderr, "remaining: %i  (%iMb)\n", r, r / (1024*1024));	
+	//int r = (pm->addr + pm->size) - pm->top;
+	//fprintf(stderr, "remaining: %i  (%iMb)\n", r, r / (1024*1024));	
 
 	pm->sdict = pat->pc.spat_dict;
 	pm->pdict = pat->pd;
 	pm->pc = pat->pc;
 	pat->pd->pc = &pm->pc;
 	assert(pm->pc.spat_dict == pm->sdict);
-	fprintf(stderr, "sdict: %p  pdict: %p\n", pm->sdict, pm->pdict);
+	//fprintf(stderr, "sdict: %p  pdict: %p\n", pm->sdict, pm->pdict);
+	fprintf(stderr, "Patterns shared memory ready.\n");
 	pm->ready = 1;
 }
 
 
 static int alloc_called = 0;
 
-void *
+static void *
 pattern_shm_realloc(void *ptr, size_t size)
 {
 	if (ptr) assert(!alloc_called);
@@ -119,7 +143,7 @@ pattern_shm_realloc(void *ptr, size_t size)
 }
 
 
-void *
+static void *
 pattern_shm_malloc(size_t size)
 {
 	pattern_shm_alloc_init();
@@ -130,7 +154,7 @@ pattern_shm_malloc(size_t size)
 	return pt;
 }
 
-void *
+static void *
 pattern_shm_calloc(size_t nmemb, size_t size)
 {
 	void *pt = pattern_shm_malloc(nmemb * size);
@@ -138,16 +162,3 @@ pattern_shm_calloc(size_t nmemb, size_t size)
 	return pt;
 }
 
-
-
-/* 
-   struct pattern_setup
-
-   struct spatial_dict 
-     spatials
-
-   struct pattern_pdict
-     struct pattern_config   (= pat->pc,  constant)
-     table
-       struct pattern_prob's   (malloc()'ed  one by one)
-*/
