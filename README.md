@@ -1,5 +1,4 @@
-<img align="right" src="media/pachi-med.jpg">
-
+                                          <img align="right" src="media/pachi-med.jpg">
 Pachi
 =====
 
@@ -8,17 +7,37 @@ the game of Go/Weiqi/Baduk, and a reasonably strong engine built
 within this framework.
 
 
+## Engine
+
+The default engine plays by Chinese rules and should be about 7d KGS
+strength on 9x9. On 19x19 it can hold a solid KGS 2d rank on modest
+hardware (Raspberry Pi 3, dcnn) or faster machine (e.g. six-way Intel
+i7) without dcnn.
+
+When using a large cluster (64 machines, 20 cores each), it maintains
+KGS 3d to 4d and has won e.g. a 7-stone handicap game against Zhou Junxun 9p.
+
+By default, Pachi currently uses the UCT engine that combines
+Monte Carlo approach with tree search; UCB1AMAF tree policy using
+the RAVE method is used for tree search, while the Moggy playout
+policy using 3x3 patterns and various tactical checks is used for
+the semi-random Monte Carlo playouts.  Large-scale board patterns
+are used in the tree search.
+
+
 ## Installation
 
-To build Pachi, simply type:
+To build Pachi, simply type:                  <img align="right" src="media/screenshot_sabaki_small.jpg" title="playing through sabaki">
 
 	make
 
 The resulting binary program `pachi` is a GTP client. Connect to it
 with your favorite Go program interface (e.g. [gogui][1], [sabaki][2], [qgo][3]),
-or use [kgsGtp][4] to connect it to KGS. (DO NOT make the GTP interface accessible
-directly to untrusted users since the parser is not secure - see the
-[HACKING](HACKING?raw=true) file for details.)
+or use [kgsGtp][4] to connect it to KGS.
+
+> DO NOT make the GTP interface accessible directly to untrusted users
+> since the parser is not secure - see the [HACKING](HACKING?raw=true)
+> file for details.
 
 [1]: https://sourceforge.net/projects/gogui/
 [2]: http://sabaki.yichuanshen.de/
@@ -37,9 +56,10 @@ section at the top of the Makefile.
 ## DCNN support
 
 Pachi can use a neural network as source of good moves to consider.
-Currently this makes it about 1 stone stronger and makes the games
-much more pretty. With dcnn support Pachi can run on very modest hardware
-with few playouts, or even no playouts at all using the dcnn engine.
+This makes it about 1 stone stronger and makes the games
+more pretty. With dcnn support Pachi can also run on modest hardware
+with very few playouts, or even no playouts at all using the dcnn
+engine (it's about 1d strength).
 
 To build Pachi with DCNN support:
 - Install Caffe library (http://caffe.berkeleyvision.org)  
@@ -61,46 +81,6 @@ playing on 19x19. For now dcnn and pondering can't be used together
 (you should get a warning on startup).
 
 
-## Analyze commands
-
-When running Pachi through GoGui, a number of graphic tools are available
-through the Tools->Analyze commands window:
-
-- Best moves
-- Score estimate
-- DCNN ratings ...
-
-It's also possible to visualize best moves / best sequence while Pachi is thinking
-via the live gfx commands.
-
-There are some non-gui tools for game analysis as well, see below.
-
-![score estimate](media/screenshot_score_est.png?raw=true "score estimate")
-![dcnn colormap](media/screenshot_dcnn_colors.png?raw=true "dcnn colormap")
-
-
-## Engine
-
-The default engine plays by Chinese rules and should be about 7d KGS
-strength on 9x9. On 19x19 it can hold a solid KGS 2d rank on modest
-hardware (Raspberry Pi 3, dcnn) or e.g. six-way Intel i7 without dcnn support.
-When using a large cluster (64 machines, 20 cores each), it maintains
-KGS 3d to 4d and has won e.g. a 7-stone handicap game against Zhou Junxun 9p.
-
-By default, Pachi currently uses the UCT engine that combines
-Monte Carlo approach with tree search; UCB1AMAF tree policy using
-the RAVE method is used for tree search, while the Moggy playout
-policy using 3x3 patterns and various tactical checks is used for
-the semi-random Monte Carlo playouts.  Large-scale board patterns
-are used in the tree search.
-
-At the same time, we keep trying a wide variety of other approaches
-and enhancements. Pachi is an active research platform and quite a few
-improvements have been already achieved. We rigorously play-test new
-features and enable them by default only when they give a universal
-strength boost.
-
-
 ## How to run
 
 By default, Pachi will run on a single CPU core, taking up to 1.4GiB
@@ -113,7 +93,7 @@ are accessible only via GTP, that is by the frontend keeping track of time,
 e.g. KGS or gogui.
 
 It's also possible to force time settings through the command line,
-see `pachi -h` also:
+see `pachi -h` for details:
 
     -t =5000          Will not set the time per se, but number of Monte Carlo
                       playouts per move. That is, Pachi will play fast on a fast
@@ -134,6 +114,7 @@ For example:
 
 This will make Pachi play with max 15000 playouts per move on 4 threads,
 taking up to 100Mb of memory (+ several tens MiB as a constant overhead).
+It should be about 2d with dcnn support.
 
 	./pachi -t _1200 threads=8,max_tree_size=3072,pondering
 
@@ -165,10 +146,27 @@ with a description. At any rate, usually the three options above are
 the only ones you really want to tweak.
 
 
+## Analyze commands
+
+When running Pachi through GoGui, a number of graphic tools are available
+through the `Tools->Analyze commands` window:
+
+- Best moves
+- Score estimate
+- DCNN ratings ...
+
+It's also possible to visualize best moves / best sequence while Pachi is thinking
+via the live gfx commands.
+
+![score estimate](media/screenshot_score_est.png?raw=true "score estimate")
+![dcnn colormap](media/screenshot_dcnn_colors.png?raw=true "dcnn colormap")
+
+There are some non-gui tools for game analysis as well, see below.
+
 
 ## Greedy Pachi
 
-(Mostly useful mostly for Pachi without dcnn support)
+> Mostly useful when running without dcnn support
 
 Normally, Pachi cares only for win or loss and does not take into
 account the point amount. This means that it will play slack endgame
