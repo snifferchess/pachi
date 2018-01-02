@@ -1,4 +1,5 @@
-                                          <img align="right" src="media/pachi-med.jpg">
+<img align="right" src="media/pachi-med.jpg">
+
 Pachi
 =====
 
@@ -27,9 +28,11 @@ are used in the tree search.
 
 ## Installation
 
-To build Pachi, simply type:                  <img align="right" src="media/screenshot_sabaki_small.jpg" title="playing through sabaki">
+To build Pachi, simply type:
 
 	make
+
+<img align="right" src="media/screenshot_sabaki.jpg" title="playing through sabaki">
 
 The resulting binary program `pachi` is a GTP client. Connect to it
 with your favorite Go program interface (e.g. [gogui][1], [sabaki][2], [qgo][3]),
