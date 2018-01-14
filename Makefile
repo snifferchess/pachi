@@ -1,3 +1,4 @@
+
 #### CONFIGURATION
 
 # Uncomment one of the options below to change the way Pachi is built.
@@ -5,21 +6,18 @@
 # 	make MAC=1 DOUBLE_FLOATING=1
 
 
-# Do you compile on Windows instead of Linux? Please note that the
-# performance may not be optimal.
+# Do you compile on Windows instead of Linux ?
+# Please note that performance may not be optimal.
 # (XXX: For now, only the mingw target is supported on Windows.
 # Patches for others are welcome!)
+# To compile in msys2 with mingw-w64, uncomment the following line
 
-# WIN=1
+# MSYS2=1
+# MSYS2_STATIC=1      # Try static build ?
+# WIN_HAVE_NO_REGEX_SUPPORT=1
 
-# To compile 64-bit version in msys2 with mingw64, uncomment the
-# following line
-# MSYS2_64=1
-
-# Do you compile on MacOS/X instead of Linux? Please note that the
-# performance may not be optimal.
-# (XXX: We are looking for volunteers contributing support for other
-# targets, like mingw/Windows.)
+# Do you compile on MacOS/X instead of Linux?
+# Please note that performance may not be optimal.
 
 # MAC=1
 
@@ -28,7 +26,7 @@
 # If Caffe is in a custom directory you can set it here.
 
 DCNN=1
-CAFFE_PREFIX=/usr/local/caffe
+# CAFFE_PREFIX=/usr/local/caffe
 
 # By default, Pachi uses low-precision numbers within the game tree to
 # conserve memory. This can become an issue with playout counts >1M,
@@ -54,31 +52,31 @@ CAFFE_PREFIX=/usr/local/caffe
 # Pachi will look for extra data files (such as dcnn, pattern, joseki or
 # fuseki database) in system directory below in addition to current directory
 # (or DATA_DIR environment variable if present).
-PREFIX?=/usr/local
-BINDIR?=$(PREFIX)/bin
-DATADIR?=$(PREFIX)/share/pachi
+PREFIX  ?= /usr/local
+BINDIR  ?= $(PREFIX)/bin
+DATADIR ?= $(PREFIX)/share/pachi
 
 # Generic compiler options. You probably do not really want to twiddle
 # any of this.
 # (N.B. -ffast-math breaks us; -fomit-frame-pointer is added below
 # unless PROFILING=gprof.)
-CUSTOM_CFLAGS?=-Wall -ggdb3 -O3 -std=gnu99 -frename-registers -pthread -Wsign-compare -D_GNU_SOURCE -DDATA_DIR=\"$(DATADIR)\"
-CUSTOM_CXXFLAGS?=-Wall -ggdb3 -O3
+CUSTOM_CXXFLAGS := -Wall -ggdb3 -O3
+CUSTOM_CFLAGS   := -Wall -ggdb3 -O3 -std=gnu99 -frename-registers -pthread -Wsign-compare \
+                                                  -D_GNU_SOURCE -DDATA_DIR=\"$(DATADIR)\"
 
+
+###################################################################################################################
 ### CONFIGURATION END
 
 MAKEFLAGS += --no-print-directory
 
-ifdef MSYS2_64
-	WIN=1
-	WIN_HAVE_NO_REGEX_SUPPORT=1
-	DOUBLE_FLOATING=1
-endif
 
-ifdef WIN
-	SYS_CFLAGS?=
-	SYS_LDFLAGS?=-pthread
-	SYS_LIBS?=-lm -lws2_32
+##############################################################
+ifdef MSYS2
+	SYS_CFLAGS  :=
+	SYS_LDFLAGS := -pthread -L$(CAFFE_PREFIX)/bin
+	SYS_LIBS    := -lws2_32
+	CUSTOM_CXXFLAGS += -I$(MINGW_PREFIX)/include/OpenBLAS
 
 ifdef WIN_HAVE_NO_REGEX_SUPPORT
 	SYS_CFLAGS += -DHAVE_NO_REGEX_SUPPORT
@@ -86,41 +84,57 @@ else
 	SYS_LIBS += -lregex
 endif
 
+	DCNN_LIBS := -lcaffe -lboost_system-mt -lstdc++ $(SYS_LIBS)
+ifdef MSYS2_STATIC		# Static build, good luck
+	DCNN_LIBS := -Wl,--whole-archive -l:libcaffe.a -Wl,--no-whole-archive  -Wl,-Bstatic  \
+                     -lboost_system-mt -lboost_thread-mt -lopenblas -lhdf5_hl -lhdf5 -lszip -lgflags_static \
+                     -lglog -lprotobuf -lz -lstdc++ -lwinpthread $(SYS_LIBS)   -Wl,-Bdynamic -lshlwapi
+
+        # glog / gflags headers really shouldn't __declspec(dllexport) symbols for us,
+        # static linking will fail with undefined __imp__xxx symbols.
+        # Normally this works around it.
+	SYS_CXXFLAGS += -DGOOGLE_GLOG_DLL_DECL="" -DGFLAGS_DLL_DECL=""
+endif
 else
+##############################################################
 ifdef MAC
-	SYS_CFLAGS?=-DNO_THREAD_LOCAL
-	SYS_LDFLAGS?=-pthread -rdynamic
-	SYS_LIBS?=-lm -ldl
+	SYS_CFLAGS  := -DNO_THREAD_LOCAL
+	SYS_LDFLAGS := -pthread -rdynamic
+	SYS_LIBS    := -lm -ldl
+	DCNN_LIBS   := -lcaffe -lboost_system -lstdc++ $(SYS_LIBS)
 else
-	SYS_CFLAGS?=-march=native
-	SYS_LDFLAGS?=-pthread -rdynamic
-	SYS_LIBS?=-lm -lrt -ldl
+##############################################################
+# Linux, *nix
+	SYS_CFLAGS  := -march=native
+	SYS_LDFLAGS := -pthread -rdynamic
+	SYS_LIBS    := -lm -lrt -ldl
+	DCNN_LIBS   := -lcaffe -lboost_system -lstdc++ $(SYS_LIBS)
 endif
 endif
 
 ifdef CAFFE_PREFIX
-	SYS_LDFLAGS+=-L$(CAFFE_PREFIX)/lib -Wl,-rpath=$(CAFFE_PREFIX)/lib
-	CXXFLAGS+=-I$(CAFFE_PREFIX)/include
+	SYS_LDFLAGS += -L$(CAFFE_PREFIX)/lib -Wl,-rpath=$(CAFFE_PREFIX)/lib
+	CXXFLAGS    += -I$(CAFFE_PREFIX)/include
 endif
 
 ifdef DCNN
-	CUSTOM_CFLAGS+=-DDCNN
-	CUSTOM_CXXFLAGS+=-DDCNN
-	SYS_LIBS:=-lcaffe -lboost_system -lstdc++ $(SYS_LIBS)
+	CUSTOM_CFLAGS   += -DDCNN
+	CUSTOM_CXXFLAGS += -DDCNN
+	SYS_LIBS := $(DCNN_LIBS)
 endif
 
 ifdef DOUBLE_FLOATING
-	CUSTOM_CFLAGS+=-DDOUBLE_FLOATING
+	CUSTOM_CFLAGS += -DDOUBLE_FLOATING
 endif
 
 ifeq ($(PROFILING), gprof)
-	CUSTOM_LDFLAGS+=-pg
-	CUSTOM_CFLAGS+=-pg -fno-inline
+	CUSTOM_LDFLAGS += -pg
+	CUSTOM_CFLAGS  += -pg -fno-inline
 else
-	# Whee, an extra register!
-	CUSTOM_CFLAGS+=-fomit-frame-pointer
+        # Whee, an extra register!
+	CUSTOM_CFLAGS += -fomit-frame-pointer
 ifeq ($(PROFILING), perftools)
-	SYS_LIBS+=-lprofiler
+	SYS_LIBS += -lprofiler
 endif
 endif
 
@@ -141,19 +155,20 @@ unexport INCLUDES
 INCLUDES=-I.
 
 
-OBJS=$(DCNN_OBJS) board.o gtp.o move.o ownermap.o pattern3.o pattern.o patternsp.o patternprob.o playout.o probdist.o random.o stone.o timeinfo.o network.o fbook.o chat.o util.o gogui.o pachi.o
+OBJS = $(DCNN_OBJS) board.o gtp.o move.o ownermap.o pattern3.o pattern.o patternsp.o patternprob.o playout.o probdist.o random.o stone.o timeinfo.o network.o fbook.o chat.o util.o gogui.o pachi.o
 ifdef DCNN
 	DCNN_OBJS=caffe.o dcnn.o
 endif
 # Low-level dependencies last
-SUBDIRS=uct uct/policy playout tactics t-unit t-predict distributed engines
-DATAFILES=patterns.prob patterns.spat book.dat golast19.prototxt golast.trained joseki19.pdict
+SUBDIRS   = uct uct/policy playout tactics t-unit t-predict distributed engines
+DATAFILES = patterns.prob patterns.spat book.dat golast19.prototxt golast.trained joseki19.pdict
 
 all: gitversion.h all-recursive pachi
 
 LOCALLIBS=$(SUBDIRS:%=%/lib.a)
 $(LOCALLIBS): all-recursive
 	@
+
 pachi: $(OBJS) $(LOCALLIBS)
 	$(call cmd,link)
 
@@ -172,6 +187,23 @@ gitversion.h: .git/HEAD .git/index
 	 echo "#define GIT_BRANCH \"$$branch\"" > $@;  \
 	 echo "#define GIT_HASH   \"$$hash\"" >> $@
 
+COMPILE_FLAGS=$(CFLAGS) $(SYS_CFLAGS) $(CUSTOM_CFLAGS) $(CXXFLAGS) $(SYS_CXXFLAGS) $(CUSTOM_CXXFLAGS)
+
+# prepare for install
+distribute: FORCE
+ifneq (,$(findstring -march=native,$(COMPILE_FLAGS)))
+	@echo "WARNING: Don't distribute binaries built with -march=native !"
+endif
+	@$(INSTALL) -d distribute
+	cp pachi distribute/
+ifdef MSYS2
+	cd distribute && strip pachi.exe
+	cd distribute && upx -o foo.exe pachi.exe
+	cd distribute && mv foo.exe pachi.exe
+else
+	cd distribute && strip pachi
+endif
+
 # install-recursive?
 install:
 	$(INSTALL) -d $(BINDIR)
@@ -184,7 +216,7 @@ install-data:
                         echo $(INSTALL) $$file $(DATADIR)/;         \
 			$(INSTALL) $$file $(DATADIR)/;              \
 		else                                                \
-			echo "Warning: $$file datafile is missing"; \
+			echo "WARNING: $$file datafile is missing"; \
                 fi                                                  \
 	done;
 
