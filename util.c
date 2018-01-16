@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include "util.h"
+#include "random.h"
 
 void
 win_set_pachi_cwd(char *pachi)
@@ -84,6 +85,30 @@ strcasestr(const char *haystack, const char *needle)
 more_hay:;
 	}
 	return NULL;
+}
+
+
+static void
+thread_cleanup(void *data)
+{
+  fast_random_unregister_thread();
+  free(data);
+}
+
+/* Run thread and call fast_random cleanup code on exit. */
+void *
+pachi_run_thread(void *data)
+{
+  void *ret = NULL;
+  
+  /* In case someone calls pthread_exit() ... */
+  pthread_cleanup_push(thread_cleanup, data);
+  
+  pthread_create_wrapper_t *p = data;
+  ret = p->f(p->data);
+
+  pthread_cleanup_pop(1);
+  return ret;
 }
 
 #endif /* _WIN32 */

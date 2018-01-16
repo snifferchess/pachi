@@ -52,6 +52,22 @@ FILE *fopen_data_file(const char *filename, const char *mode);
 #include <winsock2.h>
 #include <windows.h>
 #include <ctype.h>
+#include <pthread.h>
+
+void *pachi_run_thread(void *data);
+
+typedef struct {
+  void* (*f)(void *);
+  void* data;
+} pthread_create_wrapper_t;
+
+/* Ensure fast_random cleanup code is run at thread-exit time. */
+#define pthread_create(id, att, func, arg)  do { \
+  pthread_create_wrapper_t *_data = malloc(sizeof(*_data)); \
+  _data->f = func; \
+  _data->data = arg; \
+  pthread_create(id, att, pachi_run_thread, _data); \
+  } while(0)
 
 #define setenv(name, value, overwrite)  SetEnvironmentVariable(name, value)
 #define sleep(seconds) Sleep((seconds) * 1000)

@@ -27,4 +27,9 @@ fast_irandom(unsigned int max)
 	return ((uint32_t)hi << 16) | fast_random(hi < himax ? 65536 : max % 65536);
 }
 
+
+#ifdef _WIN32
+void fast_random_unregister_thread();
+#endif
+
 #endif
