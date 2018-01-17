@@ -32,6 +32,11 @@ caffe_init()
 	char model_file[256];    get_data_file(model_file, "golast19.prototxt");
 	char trained_file[256];  get_data_file(trained_file, "golast.trained");
 	if (!file_exists(model_file) || !file_exists(trained_file)) {
+#ifdef _WIN32
+		/* Easy to forget to set current directory in windows, warn user. */
+		popup("Could not find pachi data files, running without dcnn support !\n"
+		      "Try running pachi.bat instead.");
+#endif
 		if (DEBUGL(1))  fprintf(stderr, "No dcnn files found, will not use dcnn code.\n");
 		return;
 	}
