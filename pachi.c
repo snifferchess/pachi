@@ -167,6 +167,9 @@ int main(int argc, char *argv[])
 	char *fbookfile = NULL;
 	char *ruleset = NULL;
 
+	/* windows: cd to pachi directory to avoid cwd issues. */
+	win_set_pachi_cwd(argv[0]);
+
 	seed = time(NULL) ^ getpid();
 
 	int opt;
