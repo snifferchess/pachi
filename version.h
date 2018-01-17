@@ -3,8 +3,8 @@
 
 #include "gitversion.h"
 
-#define PACHI_VERNUM 11.99
-#define PACHI_VERNUMS "11.99"
+#define PACHI_VERNUM 12.00
+#define PACHI_VERNUMS "12.00"
 
 /* 00. Wang Zhi
  * 01. Sansa     Meijin  1612-1623
@@ -31,11 +31,9 @@
  * 19. Shuei     Meijin  1887-1907
  * 20. Shugen    6-Dan   1907-1908
  * 21. Shusai    Meijin  1908-1940 */
-#define PACHI_VERNAME "Genjo"
+#define PACHI_VERNAME "Jowa"
 
-/* -devel except when tagged. */
-#define PACHI_VERDEV "-devel"
-
-#define PACHI_VERSION PACHI_VERNUMS " (" PACHI_VERNAME PACHI_VERDEV ") - " GIT_BRANCH " (" GIT_HASH ")"
+#define PACHI_VERSION PACHI_VERNUMS " (" PACHI_VERNAME ")"
+#define PACHI_VERGIT  GIT_HASH " (" GIT_BRANCH ") " GIT_DATE
 
 #endif

@@ -175,9 +175,12 @@ pachi-profiled:
 gitversion.h: .git/HEAD .git/index
 	@echo "[make] gitversion.h"
 	@branch=`git status | grep '^On branch' | sed -e 's/On branch //'`; \
-	 hash=`git rev-parse --short HEAD`; \
-	 echo "#define GIT_BRANCH \"$$branch\"" > $@;  \
-	 echo "#define GIT_HASH   \"$$hash\"" >> $@
+	 hash=`git rev-parse --short HEAD`;           \
+	 date=`git log  --pretty="%at"  HEAD^..HEAD`; \
+         date=`date +"%b %e %Y" --date=@$$date`;      \
+	 ( echo "#define GIT_BRANCH \"$$branch\"";    \
+	   echo "#define GIT_HASH   \"$$hash\"";      \
+	   echo "#define GIT_DATE   \"$$date\"" ) > $@
 
 # install-recursive?
 install:
