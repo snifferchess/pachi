@@ -122,6 +122,13 @@ usage()
 		" \n");
 }
 
+static void
+show_version(FILE *s)
+{
+	fprintf(s, "Pachi version %s\n", PACHI_VERSION);
+	fprintf(s, "git %s\n", PACHI_VERGIT);
+}
+
 #define OPT_FUSEKI_TIME   256
 #define OPT_NO_DCNN       257
 #define OPT_VERBOSE_CAFFE 258
@@ -246,7 +253,7 @@ int main(int argc, char *argv[])
 				verbose_caffe = true;
 				break;
 			case 'v':
-				fprintf(stderr, "Pachi version %s\n", PACHI_VERSION);
+				show_version(stdout);
 				exit(0);
 			case ':':
 				warning("%s: Missing argument\n"
@@ -262,7 +269,7 @@ int main(int argc, char *argv[])
 	if (!verbose_caffe)      quiet_caffe(argc, argv);
 	if (log_port)		 open_log_port(log_port);
 
-	if (DEBUGL(0))           fprintf(stderr, "Pachi version %s\n", PACHI_VERSION);
+	if (DEBUGL(0))           show_version(stderr);
 	if (getenv("DATA_DIR"))
 		if (DEBUGL(0))   fprintf(stderr, "Using data dir %s\n", getenv("DATA_DIR"));
 	
