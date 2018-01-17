@@ -7,6 +7,18 @@
 #include <sys/stat.h>
 #include "util.h"
 
+void
+win_set_pachi_cwd(char *pachi)
+{
+#ifdef _WIN32
+	char *pachi_path = strdup(pachi);
+	char *pachi_dir = dirname(pachi_path);
+	if (chdir(pachi_dir) != 0)  die("Couldn't cd to %s", pachi_dir);
+	free(pachi_path);
+#endif
+}
+
+
 int
 file_exists(const char *name)
 {

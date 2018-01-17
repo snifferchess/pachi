@@ -6,6 +6,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <libgen.h>
 
 #include "board.h"
 #include "debug.h"
@@ -146,6 +147,9 @@ int main(int argc, char *argv[])
 	char *chatfile = NULL;
 	char *fbookfile = NULL;
 	char *ruleset = NULL;
+
+	/* windows: cd to pachi directory to avoid cwd issues. */
+	win_set_pachi_cwd(argv[0]);
 
 	seed = time(NULL) ^ getpid();
 
