@@ -732,6 +732,12 @@ uct_evaluate(struct engine *e, struct board *b, struct time_info *ti, floating_t
 	}
 }
 
+static void
+log_nthreads(struct uct *u)
+{
+	static int logged = 0;
+	if (DEBUGL(0) && !logged++)  fprintf(stderr, "Threads: %i\n", u->threads);
+}
 
 struct uct *
 uct_state_init(char *arg, struct board *b)
@@ -750,11 +756,11 @@ uct_state_init(char *arg, struct board *b)
 	u->dumpthres = 0.01;
 	u->playout_amaf = true;
 	u->amaf_prior = false;
-	u->max_tree_size = 1408ULL * 1048576;
+	u->max_tree_size = 200ULL * 1048576;
 	u->fast_alloc = true;
 	u->pruning_threshold = 0;
 
-	u->threads = 1;
+	u->threads = get_nprocessors();
 	u->thread_model = TM_TREEVL;
 	u->virtual_loss = 1;
 
@@ -1356,6 +1362,7 @@ uct_state_init(char *arg, struct board *b)
 	if (u->want_pat && !pat_setup)
 		patterns_init(&u->pat, NULL, false, true);
 	dcnn_init();
+	log_nthreads(u);
 
 	if (u->slave) {
 		if (!u->stats_hbits) u->stats_hbits = DEFAULT_STATS_HBITS;
