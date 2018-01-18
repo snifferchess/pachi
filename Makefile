@@ -83,7 +83,7 @@ else
 	SYS_LIBS += -lregex
 endif
 
-	DCNN_LIBS:=-lcaffe -lboost_system-mt -lstdc++ $(SYS_LIBS)
+	DCNN_LIBS:=-lcaffe -lboost_system-mt -lglog -lstdc++ $(SYS_LIBS)
 ifdef MSYS2_STATIC		# Static build, good luck
 	DCNN_LIBS:=-Wl,--whole-archive -l:libcaffe.a -Wl,--no-whole-archive  -Wl,-Bstatic  \
                    -lboost_system-mt -lboost_thread-mt -lopenblas -lhdf5_hl -lhdf5 -lszip -lgflags_static \
@@ -95,13 +95,13 @@ ifdef MAC
 	SYS_CFLAGS?=-DNO_THREAD_LOCAL
 	SYS_LDFLAGS?=-pthread -rdynamic
 	SYS_LIBS?=-lm -ldl
-	DCNN_LIBS:=-lcaffe -lboost_system -lstdc++ $(SYS_LIBS)
+	DCNN_LIBS:=-lcaffe -lboost_system -lglog -lstdc++ $(SYS_LIBS)
 else
 ##############################################################
 	SYS_CFLAGS?=-march=native
 	SYS_LDFLAGS?=-pthread -rdynamic
 	SYS_LIBS?=-lm -lrt -ldl
-	DCNN_LIBS:=-lcaffe -lboost_system -lstdc++ $(SYS_LIBS)
+	DCNN_LIBS:=-lcaffe -lboost_system -lglog -lstdc++ $(SYS_LIBS)
 endif
 endif
 
