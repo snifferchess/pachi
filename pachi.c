@@ -29,6 +29,7 @@
 #include "network.h"
 #include "uct/tree.h"
 #include "dcnn.h"
+#include "caffe.h"
 
 int debug_level = 3;
 bool debug_boardprint = true;
@@ -100,6 +101,7 @@ usage()
 		"  -t, --time TIME_SETTINGS          force basic time settings (override kgs/gtp time settings) \n"
 		"      --fuseki-time TIME_SETTINGS   specific time settings to use during fuseki \n"
 		"  -u, --unit-test FILE              run unit tests \n"
+		"      --verbose-caffe               enable caffe logging \n"
 		"  -v, --version                     show version \n"
 		" \n"
 		"TIME_SETTINGS: \n"
@@ -120,8 +122,9 @@ usage()
 		" \n");
 }
 
-#define OPT_FUSEKI_TIME 256
-#define OPT_NO_DCNN     257
+#define OPT_FUSEKI_TIME   256
+#define OPT_NO_DCNN       257
+#define OPT_VERBOSE_CAFFE 258
 static struct option longopts[] = {
 	{ "fuseki-time", required_argument, 0, OPT_FUSEKI_TIME },
 	{ "chatfile",    required_argument, 0, 'c' },
@@ -137,6 +140,7 @@ static struct option longopts[] = {
 	{ "seed",        required_argument, 0, 's' },
 	{ "time",        required_argument, 0, 't' },
 	{ "unit-test",   required_argument, 0, 'u' },
+	{ "verbose-caffe", no_argument,     0, OPT_VERBOSE_CAFFE },
 	{ "version",     no_argument,       0, 'v' },
 	{ 0, 0, 0, 0 }
 };
@@ -153,6 +157,7 @@ int main(int argc, char *argv[])
 	char *fbookfile = NULL;
 	char *ruleset = NULL;
 	FILE *file = NULL;
+	bool verbose_caffe = false;
 
 	/* windows: cd to pachi directory to avoid cwd issues. */
 	win_set_pachi_cwd(argv[0]);
@@ -237,6 +242,9 @@ int main(int argc, char *argv[])
 			case 'u':
 				testfile = strdup(optarg);
 				break;
+			case OPT_VERBOSE_CAFFE:
+				verbose_caffe = true;
+				break;
 			case 'v':
 				fprintf(stderr, "Pachi version %s\n", PACHI_VERSION);
 				exit(0);
@@ -251,17 +259,15 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	dcnn_quiet_caffe(argc, argv);
-	if (log_port)
-		open_log_port(log_port);
+	if (!verbose_caffe)      quiet_caffe(argc, argv);
+	if (log_port)		 open_log_port(log_port);
 
-	fprintf(stderr, "Pachi version %s\n", PACHI_VERSION);
-	if (DEBUGL(0) && getenv("DATA_DIR"))
-		fprintf(stderr, "Using data dir %s\n", getenv("DATA_DIR"));
+	if (DEBUGL(0))           fprintf(stderr, "Pachi version %s\n", PACHI_VERSION);
+	if (getenv("DATA_DIR"))
+		if (DEBUGL(0))   fprintf(stderr, "Using data dir %s\n", getenv("DATA_DIR"));
 	
 	fast_srandom(seed);
-	if (DEBUGL(0))
-		fprintf(stderr, "Random seed: %d\n", seed);
+	if (DEBUGL(0))	         fprintf(stderr, "Random seed: %d\n", seed);
 
 	if (testfile)
 		return unit_test(testfile);

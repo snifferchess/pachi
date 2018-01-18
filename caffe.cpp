@@ -18,6 +18,14 @@ extern "C" {
 
 static shared_ptr<Net<float> > net;
 
+/* Make caffe quiet */
+void
+quiet_caffe(int argc, char *argv[])
+{
+	google::InitGoogleLogging(argv[0]);
+	google::SetStderrLogging(google::NUM_SEVERITIES - 1);
+}
+	
 bool
 caffe_ready()
 {

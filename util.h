@@ -69,7 +69,6 @@ typedef struct {
   pthread_create(id, att, pachi_run_thread, _data); \
   } while(0)
 
-#define setenv(name, value, overwrite)  SetEnvironmentVariable(name, value)
 #define sleep(seconds) Sleep((seconds) * 1000)
 #define setlinebuf(file)   setvbuf(file, NULL, _IOLBF, 0)
 
