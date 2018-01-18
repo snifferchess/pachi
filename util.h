@@ -54,7 +54,6 @@ FILE *fopen_data_file(const char *filename, const char *mode);
 #include <windows.h>
 #include <ctype.h>
 
-#define setenv(name, value, overwrite)  SetEnvironmentVariable(name, value)
 #define sleep(seconds) Sleep((seconds) * 1000)
 
 /* No line buffering on windows, set to unbuffered. */
