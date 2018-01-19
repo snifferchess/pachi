@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <pthread.h>
 
 #include "board.h"
 #include "debug.h"
@@ -430,6 +431,41 @@ test_moggy_moves(struct board *b, char *arg)
 	return true;   // Not much of a unit test right now =)
 }
 
+typedef struct {
+	struct board *b;
+	enum stone color;
+	struct playout_setup *setup;
+	struct playout_policy *policy;
+	struct board_ownermap *ownermap;
+	int *wr;
+} game_data_t;
+
+#define games 4000
+
+static void
+play_games(struct board *b, enum stone color, 
+	   struct playout_setup *setup, struct playout_policy *policy,
+	   struct board_ownermap *ownermap, int *wr)
+{
+	for (int i = 0; i < games; i++)  {
+		struct board b2;
+		board_copy(&b2, b);
+		
+		int score = play_random_game(setup, &b2, color, NULL, ownermap, policy);
+		if (color == S_WHITE)
+			score = -score;
+		*wr += (score > 0);
+		board_done_noalloc(&b2);
+	}
+}
+
+static void*
+run_thread(void *data)
+{
+	game_data_t *g = data;
+	play_games(g->b, g->color, g->setup, g->policy, g->ownermap, g->wr);
+	return NULL;
+}
 
 /* Play a number of playouts, show ownermap and stats on final status of given coord(s)
  * Board last move matters quite a lot and must be set.
@@ -443,7 +479,7 @@ test_moggy_moves(struct board *b, char *arg)
 static bool
 test_moggy_status(struct board *b, char *arg)
 {
-	int games = 4000;
+	int nthreads = 2;
 	coord_t              status_at[10];
 	enum point_judgement expected[10];
 	int                  thres[10];
@@ -479,7 +515,7 @@ test_moggy_status(struct board *b, char *arg)
 			if (!thres[i])  chr = "????";
 			fprintf(stderr, "%s %c  ", coord2sstr(status_at[i], b),	chr[expected[i]]);
 		}
-		fprintf(stderr, "%s to play. Playing %i games ...\n", stone2str(color), games);
+		fprintf(stderr, "%s to play. Playing %i games (%i threads) ...\n", stone2str(color), games, nthreads);
 	}
 	
 	struct playout_policy *policy = playout_moggy_init(NULL, b, NULL);
@@ -489,16 +525,24 @@ test_moggy_status(struct board *b, char *arg)
 	/* Get final status estimate after a number of moggy games */
 	int wr = 0;
 	double time_start = time_now();
-	for (int i = 0; i < games; i++)  {
-		struct board b2;
-		board_copy(&b2, b);
-		
-		int score = play_random_game(&setup, &b2, color, NULL, &ownermap, policy);
-		if (color == S_WHITE)
-			score = -score;
-		wr += (score > 0);
-		board_done_noalloc(&b2);
+
+	pthread_t threads[16];
+	for (int i = 0; i < nthreads; i++) {
+		game_data_t *g = malloc(sizeof(*g));
+		g->b = b;   g->color = color;   g->setup = &setup;   g->policy = policy;
+		g->ownermap = &ownermap;   g->wr = &wr;
+
+		pthread_attr_t a;
+		pthread_attr_init(&a);
+		pthread_attr_setstacksize(&a, 1048576);
+
+		pthread_create(&threads[i], &a, run_thread, g);
 	}
+
+	for (int i = 0; i < nthreads; i++)
+		pthread_join(threads[i], NULL);
+
+
 	double elapsed = time_now() - time_start;
 	fprintf(stderr, "moggy status in %.1fs, %i games/s\n\n", elapsed, (int)((float)games / elapsed));
 	
