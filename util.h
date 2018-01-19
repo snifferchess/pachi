@@ -56,7 +56,9 @@ FILE *fopen_data_file(const char *filename, const char *mode);
 
 #define setenv(name, value, overwrite)  SetEnvironmentVariable(name, value)
 #define sleep(seconds) Sleep((seconds) * 1000)
-#define setlinebuf(file)   setvbuf(file, NULL, _IOLBF, 0)
+
+/* No line buffering on windows, set to unbuffered. */
+#define setlinebuf(file)   setvbuf(file, NULL, _IONBF, 0)
 
 /* Windows MessageBox() */
 #define popup(msg)	MessageBox(0, msg, "Pachi", MB_OK);

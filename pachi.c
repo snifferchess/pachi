@@ -172,6 +172,9 @@ int main(int argc, char *argv[])
 	char *ruleset = NULL;
 	FILE *file = NULL;
 
+	setlinebuf(stdout);
+	setlinebuf(stderr);
+
 	/* windows: cd to pachi directory to avoid cwd issues. */
 	win_set_pachi_cwd(argv[0]);
 
@@ -220,7 +223,7 @@ int main(int argc, char *argv[])
 			case 'o':
 				file = fopen(optarg, "w");   if (!file) fail(optarg);
 				fclose(file);
-				freopen(optarg, "w", stderr);
+				if (!freopen(optarg, "w", stderr))  fail("freopen()");
 				setlinebuf(stderr);
 				break;
 			case OPT_NO_DCNN:
