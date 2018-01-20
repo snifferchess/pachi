@@ -33,9 +33,8 @@
  * 21. Shusai    Meijin  1908-1940 */
 #define PACHI_VERNAME "Genjo"
 
-/* -devel except when tagged. */
-#define PACHI_VERDEV "-devel"
-
-#define PACHI_VERSION PACHI_VERNUMS " (" PACHI_VERNAME PACHI_VERDEV ") - " GIT_BRANCH " (" GIT_HASH ")"
+#define PACHI_VERSION  PACHI_VERNUMS " (" PACHI_VERNAME ")"
+#define PACHI_VERGIT   PACHI_GIT_HASH " (" PACHI_GIT_BRANCH ")"
+#define PACHI_VERBUILD PACHI_BUILD_TARGET ",  " PACHI_BUILD_DATE
 
 #endif

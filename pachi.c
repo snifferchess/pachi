@@ -116,7 +116,27 @@ usage()
 		" \n");
 }
 
-#define OPT_FUSEKI_TIME 256
+static void
+show_version(FILE *s)
+{
+	fprintf(s, "Pachi version %s\n", PACHI_VERSION);
+	fprintf(s, "git   %s\n", PACHI_VERGIT);
+
+	/* Build info */
+	char *dcnn = "dcnn ";
+	char boardsize[32] = "";
+#ifndef DCNN
+	dcnn = "!dcnn";
+#endif
+#ifdef BOARD_SIZE
+	sprintf(boardsize, "  [%ix%i]", BOARD_SIZE, BOARD_SIZE);
+#endif
+	fprintf(s, "%s build for %s %s\n", dcnn, PACHI_VERBUILD, boardsize);
+}
+
+#define OPT_FUSEKI_TIME   256
+#define OPT_NO_DCNN       257
+#define OPT_VERBOSE_CAFFE 258
 static struct option longopts[] = {
 	{ "fuseki-time", required_argument, 0, OPT_FUSEKI_TIME },
 	{ "chatfile",    required_argument, 0, 'c' },
@@ -217,7 +237,7 @@ int main(int argc, char *argv[])
 				testfile = strdup(optarg);
 				break;
 			case 'v':
-				fprintf(stderr, "Pachi version %s\n", PACHI_VERSION);
+				show_version(stdout);
 				exit(0);
 			default: /* '?' */
 				usage();
@@ -229,7 +249,7 @@ int main(int argc, char *argv[])
 	if (log_port)
 		open_log_port(log_port);
 
-	fprintf(stderr, "Pachi version %s\n", PACHI_VERSION);
+	if (DEBUGL(0))           show_version(stderr);
 	if (DEBUGL(0) && getenv("DATA_DIR"))
 		fprintf(stderr, "Using data dir %s\n", getenv("DATA_DIR"));
 	

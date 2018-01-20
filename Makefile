@@ -180,18 +180,22 @@ pachi-profiled:
 	./pachi -t =5000 no_tbook < gtp/genmove_both.gtp
 	@make clean all clean-profiled XLDFLAGS=-fprofile-use XCFLAGS="-fprofile-use -fomit-frame-pointer -frename-registers"
 
+# Build info
+# XXX target is gcc specific
 gitversion.h: .git/HEAD .git/index
 	@echo "[make] gitversion.h"
 	@branch=`git status | grep '^On branch' | sed -e 's/On branch //'`; \
-	 hash=`git rev-parse --short HEAD`; \
-	 echo "#define GIT_BRANCH \"$$branch\"" > $@;  \
-	 echo "#define GIT_HASH   \"$$hash\"" >> $@
+	 hash=`git rev-parse --short HEAD`;           \
+         date=`date +"%b %e %Y"`;                     \
+         target=`$(CC) $(CFLAGS) -E -v - </dev/null 2>&1 | grep cc1 | sed -e 's/.*-march=\([^ ]*\).*/\1/' `; \
+	 ( echo "#define PACHI_GIT_BRANCH   \"$$branch\"";    \
+	   echo "#define PACHI_GIT_HASH     \"$$hash\"";      \
+	   echo "#define PACHI_BUILD_DATE   \"$$date\"";      \
+	   echo "#define PACHI_BUILD_TARGET \"$$target\"" ) > $@
 
-COMPILE_FLAGS=$(CFLAGS) $(SYS_CFLAGS) $(CUSTOM_CFLAGS) $(CXXFLAGS) $(SYS_CXXFLAGS) $(CUSTOM_CXXFLAGS)
-
-# prepare for install
+# Prepare for install
 distribute: FORCE
-ifneq (,$(findstring -march=native,$(COMPILE_FLAGS)))
+ifneq (,$(findstring -march=native,$(CFLAGS) $(CXXFLAGS)))
 	@echo "WARNING: Don't distribute binaries built with -march=native !"
 endif
 	@$(INSTALL) -d distribute
